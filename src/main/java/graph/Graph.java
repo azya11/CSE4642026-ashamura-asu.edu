@@ -47,6 +47,20 @@ public class Graph {
         }
     }
 
+    public void addEdge(String srcLabel, String dstLabel) {
+        if (srcLabel == null || dstLabel == null ||
+                srcLabel.trim().isEmpty() || dstLabel.trim().isEmpty()) {
+            throw new IllegalArgumentException("Source and destination labels cannot be null or empty.");
+        }
+
+        String src = srcLabel.trim();
+        String dst = dstLabel.trim();
+
+        addNode(src);
+        addNode(dst);
+        edges.add(src + "->" + dst);
+    }
+
     protected void addNodeInternal(String label) {
         nodes.add(label);
     }

@@ -1,8 +1,11 @@
 Number of nodes: 8
 Nodes: [a, b, c, d, e, x, y, z]
-Number of edges: 4
+Number of edges: 7
 Edges:
 a -> b
+a -> x
 b -> c
 c -> d
 d -> a
+x -> y
+y -> z
