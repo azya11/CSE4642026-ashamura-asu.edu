@@ -31,6 +31,22 @@ public class Graph {
         return edges.size();
     }
 
+    public void addNode(String label) {
+        if (label == null || label.trim().isEmpty()) {
+            throw new IllegalArgumentException("Node label cannot be null or empty.");
+        }
+        nodes.add(label.trim());
+    }
+
+    public void addNodes(String[] labels) {
+        if (labels == null) {
+            throw new IllegalArgumentException("Labels array cannot be null.");
+        }
+        for (String label : labels) {
+            addNode(label);
+        }
+    }
+
     protected void addNodeInternal(String label) {
         nodes.add(label);
     }

@@ -1,5 +1,5 @@
-Number of nodes: 5
-Nodes: [a, b, c, d, e]
+Number of nodes: 8
+Nodes: [a, b, c, d, e, x, y, z]
 Number of edges: 4
 Edges:
 a -> b
