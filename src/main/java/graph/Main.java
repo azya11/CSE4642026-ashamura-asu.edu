@@ -12,7 +12,12 @@ public class Main {
             graph.addEdge("a", "x");
 
             System.out.println(graph);
+
             graph.outputGraph("graphs/output.txt");
+            graph.outputDOTGraph("graphs/output.dot");
+            graph.outputGraphics("graphs/output.dot", "png");
+
+            System.out.println("Generated output.txt, output.dot, and output.png");
         } catch (Exception e) {
             e.printStackTrace();
         }

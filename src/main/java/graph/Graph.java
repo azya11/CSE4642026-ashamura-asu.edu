@@ -90,4 +90,53 @@ public class Graph {
     public void outputGraph(String filepath) throws IOException {
         Files.writeString(Paths.get(filepath), toString());
     }
+
+    public void outputDOTGraph(String path) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append("digraph {").append(System.lineSeparator());
+
+        for (String edge : edges) {
+            String[] parts = edge.split("->");
+            sb.append("    ").append(parts[0]).append(" -> ").append(parts[1]).append(";")
+                    .append(System.lineSeparator());
+        }
+
+        for (String node : nodes) {
+            boolean used = false;
+            for (String edge : edges) {
+                if (edge.startsWith(node + "->") || edge.endsWith("->" + node)) {
+                    used = true;
+                    break;
+                }
+            }
+            if (!used) {
+                sb.append("    ").append(node).append(";").append(System.lineSeparator());
+            }
+        }
+
+        sb.append("}").append(System.lineSeparator());
+        Files.writeString(Paths.get(path), sb.toString());
+    }
+
+    public void outputGraphics(String path, String format) throws IOException, InterruptedException {
+        if (!"png".equalsIgnoreCase(format)) {
+            throw new IllegalArgumentException("Only png format is supported.");
+        }
+
+        String outputPath;
+        if (path.toLowerCase().endsWith(".dot")) {
+            outputPath = path.substring(0, path.length() - 4) + "." + format;
+        } else {
+            outputPath = path + "." + format;
+        }
+
+        ProcessBuilder pb = new ProcessBuilder("dot", "-T" + format, path, "-o", outputPath);
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new IOException("Graphviz failed to generate the output image.");
+        }
+    }
 }
