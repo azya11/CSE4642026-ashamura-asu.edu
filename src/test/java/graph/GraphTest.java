@@ -52,6 +52,49 @@ public class GraphTest {
     }
 
     @Test
+    public void testRemoveNode() {
+        Graph g = new Graph();
+        g.addNode("a");
+        g.addNode("b");
+        g.addEdge("a", "b");
+        g.removeNode("a");
+        assertEquals(1, g.getNodeCount());
+        assertEquals(0, g.getEdgeCount());
+    }
+
+    @Test
+    public void testRemoveNodes() {
+        Graph g = new Graph();
+        g.addNode("a");
+        g.addNode("b");
+        g.addNode("c");
+        g.removeNodes(new String[]{"a", "b"});
+        assertEquals(1, g.getNodeCount());
+    }
+
+    @Test
+    public void testRemoveEdge() {
+        Graph g = new Graph();
+        g.addEdge("a", "b");
+        g.removeEdge("a", "b");
+        assertEquals(0, g.getEdgeCount());
+    }
+
+    @Test
+    public void testRemoveNodeException() {
+        Graph g = new Graph();
+        assertThrows(RuntimeException.class, () -> g.removeNode("x"));
+    }
+
+    @Test
+    public void testRemoveEdgeException() {
+        Graph g = new Graph();
+        g.addNode("a");
+        g.addNode("b");
+        assertThrows(RuntimeException.class, () -> g.removeEdge("a", "b"));
+    }
+
+    @Test
     public void testOutputDOTGraph() throws Exception {
         Graph g = new Graph();
         g.addEdge("a", "b");

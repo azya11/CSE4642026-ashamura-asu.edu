@@ -3,6 +3,7 @@ package graph;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -59,6 +60,34 @@ public class Graph {
         addNode(src);
         addNode(dst);
         edges.add(src + "->" + dst);
+    }
+
+    public void removeNode(String label) {
+        if (!nodes.contains(label)) {
+            throw new RuntimeException("Node not found: " + label);
+        }
+        nodes.remove(label);
+        ArrayList<String> temp = new ArrayList<>();
+        for (String e : edges) {
+            if (e.startsWith(label + "->") || e.endsWith("->" + label)) {
+                temp.add(e);
+            }
+        }
+        edges.removeAll(temp);
+    }
+
+    public void removeNodes(String[] labels) {
+        for (String label : labels) {
+            removeNode(label);
+        }
+    }
+
+    public void removeEdge(String srcLabel, String dstLabel) {
+        String edge = srcLabel + "->" + dstLabel;
+        if (!edges.contains(edge)) {
+            throw new RuntimeException("Edge not found: " + edge);
+        }
+        edges.remove(edge);
     }
 
     protected void addNodeInternal(String label) {
