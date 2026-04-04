@@ -3,9 +3,7 @@ package graph;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Graph {
     private final Set<String> nodes;
@@ -88,6 +86,44 @@ public class Graph {
             throw new RuntimeException("Edge not found: " + edge);
         }
         edges.remove(edge);
+    }
+
+    public Path GraphSearch(Node src, Node dst) {
+        if (!nodes.contains(src.label) || !nodes.contains(dst.label))
+            return null;
+
+        HashSet<String> visited = new HashSet<>();
+        ArrayList<Node> pathList = new ArrayList<>();
+
+        if (dfs(src.label, dst.label, visited, pathList)) {
+            Path path = new Path();
+            for (Node n : pathList)
+                path.addNode(n);
+            return path;
+        }
+
+        return null;
+    }
+
+    private boolean dfs(String curr, String dst, HashSet<String> visited, ArrayList<Node> pathList) {
+        visited.add(curr);
+        pathList.add(new Node(curr));
+
+        if (curr.equals(dst))
+            return true;
+
+        for (String edge : edges) {
+            if (edge.startsWith(curr + "->")) {
+                String neighbor = edge.split("->")[1];
+                if (!visited.contains(neighbor)) {
+                    if (dfs(neighbor, dst, visited, pathList))
+                        return true;
+                }
+            }
+        }
+
+        pathList.remove(pathList.size() - 1);
+        return false;
     }
 
     protected void addNodeInternal(String label) {
