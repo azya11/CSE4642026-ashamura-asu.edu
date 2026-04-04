@@ -3,9 +3,7 @@ package graph;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Graph {
     private final Set<String> nodes;
@@ -88,6 +86,43 @@ public class Graph {
             throw new RuntimeException("Edge not found: " + edge);
         }
         edges.remove(edge);
+    }
+
+    public Path GraphSearch(Node src, Node dst) {
+        if (!nodes.contains(src.label) || !nodes.contains(dst.label))
+            return null;
+
+        Queue<Node> queue = new LinkedList<>();
+        HashMap<String, String> parent = new HashMap<>();
+        queue.add(src);
+        parent.put(src.label, null);
+
+        while (!queue.isEmpty()) {
+            Node curr = queue.poll();
+            if (curr.label.equals(dst.label)) {
+                ArrayList<String> list = new ArrayList<>();
+                String c = dst.label;
+                while (c != null) {
+                    list.add(0, c);
+                    c = parent.get(c);
+                }
+                Path path = new Path();
+                for (String l : list)
+                    path.addNode(new Node(l));
+                return path;
+            }
+            for (String edge : edges) {
+                if (edge.startsWith(curr.label + "->")) {
+                    String neighbor = edge.split("->")[1];
+                    if (!parent.containsKey(neighbor)) {
+                        parent.put(neighbor, curr.label);
+                        queue.add(new Node(neighbor));
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     protected void addNodeInternal(String label) {
