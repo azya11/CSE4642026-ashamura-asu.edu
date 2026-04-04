@@ -88,41 +88,72 @@ public class Graph {
         edges.remove(edge);
     }
 
-    public Path GraphSearch(Node src, Node dst) {
+    public Path GraphSearch(Node src, Node dst, Algorithm algo) {
         if (!nodes.contains(src.label) || !nodes.contains(dst.label))
             return null;
 
-        Queue<Node> queue = new LinkedList<>();
-        HashMap<String, String> parent = new HashMap<>();
-        queue.add(src);
-        parent.put(src.label, null);
+        if (algo == Algorithm.BFS) {
+            Queue<Node> queue = new LinkedList<>();
+            HashMap<String, String> parent = new HashMap<>();
+            queue.add(src);
+            parent.put(src.label, null);
 
-        while (!queue.isEmpty()) {
-            Node curr = queue.poll();
-            if (curr.label.equals(dst.label)) {
-                ArrayList<String> list = new ArrayList<>();
-                String c = dst.label;
-                while (c != null) {
-                    list.add(0, c);
-                    c = parent.get(c);
+            while (!queue.isEmpty()) {
+                Node curr = queue.poll();
+                if (curr.label.equals(dst.label)) {
+                    ArrayList<String> list = new ArrayList<>();
+                    String c = dst.label;
+                    while (c != null) {
+                        list.add(0, c);
+                        c = parent.get(c);
+                    }
+                    Path path = new Path();
+                    for (String l : list)
+                        path.addNode(new Node(l));
+                    return path;
                 }
-                Path path = new Path();
-                for (String l : list)
-                    path.addNode(new Node(l));
-                return path;
-            }
-            for (String edge : edges) {
-                if (edge.startsWith(curr.label + "->")) {
-                    String neighbor = edge.split("->")[1];
-                    if (!parent.containsKey(neighbor)) {
-                        parent.put(neighbor, curr.label);
-                        queue.add(new Node(neighbor));
+                for (String edge : edges) {
+                    if (edge.startsWith(curr.label + "->")) {
+                        String neighbor = edge.split("->")[1];
+                        if (!parent.containsKey(neighbor)) {
+                            parent.put(neighbor, curr.label);
+                            queue.add(new Node(neighbor));
+                        }
                     }
                 }
+            }
+        } else {
+            ArrayList<Node> pathList = new ArrayList<>();
+            if (dfs(src.label, dst.label, new HashSet<>(), pathList)) {
+                Path path = new Path();
+                for (Node n : pathList)
+                    path.addNode(n);
+                return path;
             }
         }
 
         return null;
+    }
+
+    private boolean dfs(String curr, String dst, HashSet<String> visited, ArrayList<Node> pathList) {
+        visited.add(curr);
+        pathList.add(new Node(curr));
+
+        if (curr.equals(dst))
+            return true;
+
+        for (String edge : edges) {
+            if (edge.startsWith(curr + "->")) {
+                String neighbor = edge.split("->")[1];
+                if (!visited.contains(neighbor)) {
+                    if (dfs(neighbor, dst, visited, pathList))
+                        return true;
+                }
+            }
+        }
+
+        pathList.remove(pathList.size() - 1);
+        return false;
     }
 
     protected void addNodeInternal(String label) {
