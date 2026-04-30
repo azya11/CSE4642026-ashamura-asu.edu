@@ -8,6 +8,10 @@ public class DfsSearchStrategy extends AbstractGraphSearchTemplate<Deque<Path>> 
         super(false);
     }
 
+    public DfsSearchStrategy(boolean traceVisits) {
+        super(traceVisits);
+    }
+
     @Override
     protected Deque<Path> createFrontier() {
         return new ArrayDeque<>();

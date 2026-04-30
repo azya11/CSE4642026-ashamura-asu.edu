@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.StringJoiner;
 
 public abstract class AbstractGraphSearchTemplate<F> implements SearchStrategy {
     private final Random random;
@@ -45,16 +46,23 @@ public abstract class AbstractGraphSearchTemplate<F> implements SearchStrategy {
         while (!isEmpty(frontier) && expansions < maxExpansions) {
             Path current = pop(frontier);
             if (traceVisits) {
-                System.out.println("visiting " + current.toDebugString());
+                System.out.println("Visit Node History: " + toVisitHistory(current));
             }
 
             Node last = current.getLastNode();
             if (last != null && last.label.equals(dst.label)) {
+                if (traceVisits) {
+                    System.out.println("Found target node: " + last.label);
+                }
                 return current;
             }
 
             List<String> orderedNeighbors = graph.getNeighbors(last.label);
-            List<String> selectedNeighbors = selectNeighbors(orderedNeighbors, current, dst, random);
+            List<String> selectedNeighbors = selectNeighbors(orderedNeighbors, current, dst, random, discovered);
+
+            if (selectedNeighbors.isEmpty()) {
+                onNoNeighborProgress(current);
+            }
 
             for (String neighbor : selectedNeighbors) {
                 if (shouldExpandNeighbor(neighbor, discovered, current)) {
@@ -73,8 +81,29 @@ public abstract class AbstractGraphSearchTemplate<F> implements SearchStrategy {
         return !discovered.contains(neighbor);
     }
 
-    protected List<String> selectNeighbors(List<String> neighbors, Path current, Node dst, Random random) {
+    protected List<String> selectNeighbors(
+            List<String> neighbors,
+            Path current,
+            Node dst,
+            Random random,
+            Set<String> discovered
+    ) {
         return neighbors;
+    }
+
+    protected void onNoNeighborProgress(Path current) {
+    }
+
+    protected boolean isTraceVisitsEnabled() {
+        return traceVisits;
+    }
+
+    private String toVisitHistory(Path path) {
+        StringJoiner joiner = new StringJoiner("-");
+        for (Node node : path.nodes) {
+            joiner.add(node.label);
+        }
+        return joiner.toString();
     }
 
     protected int maxExpansions(Graph graph) {

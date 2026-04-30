@@ -6,6 +6,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class Graph {
+    private static final String EDGE_SEPARATOR = "->";
+
     private final Set<String> nodes;
     private final Set<String> edges;
     private final Map<String, SortedSet<String>> adjacency;
@@ -64,10 +66,11 @@ public class Graph {
 
         String src = srcLabel.trim();
         String dst = dstLabel.trim();
+        String edge = buildEdge(src, dst);
 
         addNode(src);
         addNode(dst);
-        if (edges.add(src + "->" + dst)) {
+        if (edges.add(edge)) {
             adjacency.computeIfAbsent(src, key -> new TreeSet<>()).add(dst);
         }
     }
@@ -80,7 +83,7 @@ public class Graph {
         adjacency.remove(label);
         ArrayList<String> temp = new ArrayList<>();
         for (String e : edges) {
-            if (e.startsWith(label + "->") || e.endsWith("->" + label)) {
+            if (e.startsWith(label + EDGE_SEPARATOR) || e.endsWith(EDGE_SEPARATOR + label)) {
                 temp.add(e);
             }
         }
@@ -99,7 +102,7 @@ public class Graph {
     }
 
     public void removeEdge(String srcLabel, String dstLabel) {
-        String edge = srcLabel + "->" + dstLabel;
+        String edge = buildEdge(srcLabel, dstLabel);
         if (!edges.contains(edge)) {
             throw new RuntimeException("Edge not found: " + edge);
         }
@@ -108,7 +111,7 @@ public class Graph {
 
     private void removeEdgeInternal(String edge) {
         edges.remove(edge);
-        String[] parts = edge.split("->", 2);
+        String[] parts = splitEdge(edge);
         if (parts.length == 2) {
             String src = parts[0];
             String dst = parts[1];
@@ -117,6 +120,14 @@ public class Graph {
                 neighbors.remove(dst);
             }
         }
+    }
+
+    private String buildEdge(String srcLabel, String dstLabel) {
+        return srcLabel + EDGE_SEPARATOR + dstLabel;
+    }
+
+    private String[] splitEdge(String edge) {
+        return edge.split(EDGE_SEPARATOR, 2);
     }
 
     public List<String> getNeighbors(String srcLabel) {
@@ -143,7 +154,7 @@ public class Graph {
     protected void addEdgeInternal(String src, String dst) {
         nodes.add(src);
         nodes.add(dst);
-        if (edges.add(src + "->" + dst)) {
+        if (edges.add(buildEdge(src, dst))) {
             adjacency.computeIfAbsent(src, key -> new TreeSet<>()).add(dst);
             adjacency.computeIfAbsent(dst, key -> new TreeSet<>());
         }
@@ -158,7 +169,7 @@ public class Graph {
         sb.append("Edges:").append(System.lineSeparator());
 
         for (String edge : edges) {
-            String[] parts = edge.split("->");
+            String[] parts = splitEdge(edge);
             sb.append(parts[0]).append(" -> ").append(parts[1]).append(System.lineSeparator());
         }
 
@@ -174,7 +185,7 @@ public class Graph {
         sb.append("digraph {").append(System.lineSeparator());
 
         for (String edge : edges) {
-            String[] parts = edge.split("->");
+            String[] parts = splitEdge(edge);
             sb.append("    ").append(parts[0]).append(" -> ").append(parts[1]).append(";")
                     .append(System.lineSeparator());
         }
@@ -182,7 +193,7 @@ public class Graph {
         for (String node : nodes) {
             boolean used = false;
             for (String edge : edges) {
-                if (edge.startsWith(node + "->") || edge.endsWith("->" + node)) {
+                if (edge.startsWith(node + EDGE_SEPARATOR) || edge.endsWith(EDGE_SEPARATOR + node)) {
                     used = true;
                     break;
                 }

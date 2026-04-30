@@ -1,36 +1,45 @@
 package graph;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Main {
     public static void main(String[] args) throws Exception {
         Graph graph = GraphParser.parseGraph("graphs/input.dot");
 
-        System.out.println("=== Strategy API: BFS / DFS ===");
-        System.out.println("BFS path from a to c: " + graph.GraphSearch("a", "c", Algorithm.BFS));
-        System.out.println("DFS path from a to c: " + graph.GraphSearch("a", "c", Algorithm.DFS));
+        System.out.println("=== BFS Demo (a -> c) ===");
+        graph.registerStrategy(Algorithm.BFS, new BfsSearchStrategy(true));
+        Path bfsPath = graph.GraphSearch("a", "c", Algorithm.BFS);
+        System.out.println("BFS Result: " + bfsPath);
 
         System.out.println();
-        System.out.println("=== Random Walk on provided graph (a -> c) ===");
-        graph.registerStrategy(Algorithm.RANDOM_WALK, new RandomWalkSearchStrategy());
-        Path requiredPath = graph.GraphSearch("a", "c", Algorithm.RANDOM_WALK);
-        System.out.println(requiredPath);
-
-        Graph randomDemoGraph = new Graph();
-        randomDemoGraph.addEdge("a", "b");
-        randomDemoGraph.addEdge("a", "e");
-        randomDemoGraph.addEdge("b", "c");
-        randomDemoGraph.addEdge("e", "c");
-        randomDemoGraph.addEdge("e", "g");
-        randomDemoGraph.addEdge("e", "f");
-        randomDemoGraph.addEdge("g", "h");
+        System.out.println("=== DFS Demo (a -> c) ===");
+        graph.registerStrategy(Algorithm.DFS, new DfsSearchStrategy(true));
+        Path dfsPath = graph.GraphSearch("a", "c", Algorithm.DFS);
+        System.out.println("DFS Result: " + dfsPath);
 
         System.out.println();
-        System.out.println("=== Random Walk Testing (multiple runs to show randomness) ===");
+        System.out.println("=== Random Walk Demo (a -> h) ===");
+        Set<String> successfulPaths = new HashSet<>();
+        int attempts = 0;
+        int minAttempts = 5;
+        int maxAttempts = 20;
 
-        for (int i = 1; i <= 6; i++) {
+        while (attempts < minAttempts || (successfulPaths.size() < 2 && attempts < maxAttempts)) {
+            attempts++;
             System.out.println("random testing");
-            randomDemoGraph.registerStrategy(Algorithm.RANDOM_WALK, new RandomWalkSearchStrategy());
-            Path randomPath = randomDemoGraph.GraphSearch("a", "c", Algorithm.RANDOM_WALK);
+            graph.registerStrategy(Algorithm.RANDOM_WALK, new RandomWalkSearchStrategy());
+            Path randomPath = graph.GraphSearch("a", "h", Algorithm.RANDOM_WALK);
             System.out.println(randomPath);
+
+            if (randomPath != null) {
+                successfulPaths.add(randomPath.toString());
+            }
+        }
+
+        System.out.println("Distinct successful random-walk paths: " + successfulPaths.size());
+        for (String p : successfulPaths) {
+            System.out.println("Success path: " + p);
         }
     }
 }

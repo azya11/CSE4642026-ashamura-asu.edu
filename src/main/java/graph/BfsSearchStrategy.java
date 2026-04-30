@@ -8,6 +8,10 @@ public class BfsSearchStrategy extends AbstractGraphSearchTemplate<Queue<Path>> 
         super(false);
     }
 
+    public BfsSearchStrategy(boolean traceVisits) {
+        super(traceVisits);
+    }
+
     @Override
     protected Queue<Path> createFrontier() {
         return new LinkedList<>();
