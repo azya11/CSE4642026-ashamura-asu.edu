@@ -9,27 +9,17 @@ public class Graph {
     private final Set<String> nodes;
     private final Set<String> edges;
     private final Map<String, SortedSet<String>> adjacency;
-    private final Map<Algorithm, SearchStrategy> strategies;
+    private final GraphSearchEngine searchEngine;
 
     public Graph() {
         this.nodes = new TreeSet<>();
         this.edges = new TreeSet<>();
         this.adjacency = new TreeMap<>();
-        this.strategies = new EnumMap<>(Algorithm.class);
-        registerDefaultStrategies();
-    }
-
-    private void registerDefaultStrategies() {
-        strategies.put(Algorithm.BFS, new BfsSearchStrategy());
-        strategies.put(Algorithm.DFS, new DfsSearchStrategy());
-        strategies.put(Algorithm.RANDOM_WALK, new RandomWalkSearchStrategy());
+        this.searchEngine = new GraphSearchEngine();
     }
 
     public void registerStrategy(Algorithm algorithm, SearchStrategy strategy) {
-        if (algorithm == null || strategy == null) {
-            throw new IllegalArgumentException("Algorithm and strategy cannot be null.");
-        }
-        strategies.put(algorithm, strategy);
+        searchEngine.registerStrategy(algorithm, strategy);
     }
 
     public Set<String> getNodes() {
@@ -131,15 +121,7 @@ public class Graph {
     }
 
     public Path GraphSearch(Node src, Node dst, Algorithm algo) {
-        if (src == null || dst == null || algo == null) {
-            return null;
-        }
-
-        SearchStrategy strategy = strategies.get(algo);
-        if (strategy == null) {
-            throw new IllegalArgumentException("No strategy configured for algorithm: " + algo);
-        }
-        return strategy.search(this, src, dst);
+        return searchEngine.search(this, src, dst, algo);
     }
 
     protected void addNodeInternal(String label) {
