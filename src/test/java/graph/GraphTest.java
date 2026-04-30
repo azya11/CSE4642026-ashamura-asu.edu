@@ -108,6 +108,18 @@ public class GraphTest {
     }
 
     @Test
+    public void testGetNeighborsReflectsEdgeUpdates() {
+        Graph g = new Graph();
+        g.addEdge("a", "b");
+        g.addEdge("a", "c");
+
+        assertEquals(java.util.List.of("b", "c"), g.getNeighbors("a"));
+
+        g.removeEdge("a", "b");
+        assertEquals(java.util.List.of("c"), g.getNeighbors("a"));
+    }
+
+    @Test
     public void testGraphSearchBfs() {
         Graph g = new Graph();
         g.addEdge("a", "b");

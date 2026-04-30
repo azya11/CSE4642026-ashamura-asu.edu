@@ -8,11 +8,13 @@ import java.util.*;
 public class Graph {
     private final Set<String> nodes;
     private final Set<String> edges;
+    private final Map<String, SortedSet<String>> adjacency;
     private final Map<Algorithm, SearchStrategy> strategies;
 
     public Graph() {
         this.nodes = new TreeSet<>();
         this.edges = new TreeSet<>();
+        this.adjacency = new TreeMap<>();
         this.strategies = new EnumMap<>(Algorithm.class);
         registerDefaultStrategies();
     }
@@ -50,7 +52,9 @@ public class Graph {
         if (label == null || label.trim().isEmpty()) {
             throw new IllegalArgumentException("Node label cannot be null or empty.");
         }
-        nodes.add(label.trim());
+        String node = label.trim();
+        nodes.add(node);
+        adjacency.computeIfAbsent(node, key -> new TreeSet<>());
     }
 
     public void addNodes(String[] labels) {
@@ -73,7 +77,9 @@ public class Graph {
 
         addNode(src);
         addNode(dst);
-        edges.add(src + "->" + dst);
+        if (edges.add(src + "->" + dst)) {
+            adjacency.computeIfAbsent(src, key -> new TreeSet<>()).add(dst);
+        }
     }
 
     public void removeNode(String label) {
@@ -81,6 +87,7 @@ public class Graph {
             throw new RuntimeException("Node not found: " + label);
         }
         nodes.remove(label);
+        adjacency.remove(label);
         ArrayList<String> temp = new ArrayList<>();
         for (String e : edges) {
             if (e.startsWith(label + "->") || e.endsWith("->" + label)) {
@@ -88,6 +95,9 @@ public class Graph {
             }
         }
         edges.removeAll(temp);
+        for (SortedSet<String> neighbors : adjacency.values()) {
+            neighbors.remove(label);
+        }
     }
 
     public void removeNodes(String[] labels) {
@@ -102,17 +112,18 @@ public class Graph {
             throw new RuntimeException("Edge not found: " + edge);
         }
         edges.remove(edge);
+        SortedSet<String> neighbors = adjacency.get(srcLabel);
+        if (neighbors != null) {
+            neighbors.remove(dstLabel);
+        }
     }
 
     public List<String> getNeighbors(String srcLabel) {
-        ArrayList<String> neighbors = new ArrayList<>();
-        for (String edge : edges) {
-            if (edge.startsWith(srcLabel + "->")) {
-                String[] parts = edge.split("->", 2);
-                neighbors.add(parts[1]);
-            }
+        SortedSet<String> neighbors = adjacency.get(srcLabel);
+        if (neighbors == null) {
+            return new ArrayList<>();
         }
-        return neighbors;
+        return new ArrayList<>(neighbors);
     }
 
     public Path GraphSearch(String src, String dst, Algorithm algo) {
@@ -133,12 +144,16 @@ public class Graph {
 
     protected void addNodeInternal(String label) {
         nodes.add(label);
+        adjacency.computeIfAbsent(label, key -> new TreeSet<>());
     }
 
     protected void addEdgeInternal(String src, String dst) {
         nodes.add(src);
         nodes.add(dst);
-        edges.add(src + "->" + dst);
+        if (edges.add(src + "->" + dst)) {
+            adjacency.computeIfAbsent(src, key -> new TreeSet<>()).add(dst);
+            adjacency.computeIfAbsent(dst, key -> new TreeSet<>());
+        }
     }
 
     @Override
