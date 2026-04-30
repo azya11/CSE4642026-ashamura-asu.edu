@@ -11,4 +11,8 @@ public class Node {
     public String toString() {
         return label;
     }
+
+    public String toDebugString() {
+        return "Node{" + label + "}";
+    }
 }

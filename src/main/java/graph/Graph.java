@@ -6,12 +6,22 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class Graph {
+    private static final String EDGE_SEPARATOR = "->";
+
     private final Set<String> nodes;
     private final Set<String> edges;
+    private final Map<String, SortedSet<String>> adjacency;
+    private final GraphSearchEngine searchEngine;
 
     public Graph() {
         this.nodes = new TreeSet<>();
         this.edges = new TreeSet<>();
+        this.adjacency = new TreeMap<>();
+        this.searchEngine = new GraphSearchEngine();
+    }
+
+    public void registerStrategy(Algorithm algorithm, SearchStrategy strategy) {
+        searchEngine.registerStrategy(algorithm, strategy);
     }
 
     public Set<String> getNodes() {
@@ -34,7 +44,9 @@ public class Graph {
         if (label == null || label.trim().isEmpty()) {
             throw new IllegalArgumentException("Node label cannot be null or empty.");
         }
-        nodes.add(label.trim());
+        String node = label.trim();
+        nodes.add(node);
+        adjacency.computeIfAbsent(node, key -> new TreeSet<>());
     }
 
     public void addNodes(String[] labels) {
@@ -54,10 +66,13 @@ public class Graph {
 
         String src = srcLabel.trim();
         String dst = dstLabel.trim();
+        String edge = buildEdge(src, dst);
 
         addNode(src);
         addNode(dst);
-        edges.add(src + "->" + dst);
+        if (edges.add(edge)) {
+            adjacency.computeIfAbsent(src, key -> new TreeSet<>()).add(dst);
+        }
     }
 
     public void removeNode(String label) {
@@ -65,13 +80,19 @@ public class Graph {
             throw new RuntimeException("Node not found: " + label);
         }
         nodes.remove(label);
+        adjacency.remove(label);
         ArrayList<String> temp = new ArrayList<>();
         for (String e : edges) {
-            if (e.startsWith(label + "->") || e.endsWith("->" + label)) {
+            if (e.startsWith(label + EDGE_SEPARATOR) || e.endsWith(EDGE_SEPARATOR + label)) {
                 temp.add(e);
             }
         }
-        edges.removeAll(temp);
+        for (String edge : temp) {
+            removeEdgeInternal(edge);
+        }
+        for (SortedSet<String> neighbors : adjacency.values()) {
+            neighbors.remove(label);
+        }
     }
 
     public void removeNodes(String[] labels) {
@@ -81,89 +102,62 @@ public class Graph {
     }
 
     public void removeEdge(String srcLabel, String dstLabel) {
-        String edge = srcLabel + "->" + dstLabel;
+        String edge = buildEdge(srcLabel, dstLabel);
         if (!edges.contains(edge)) {
             throw new RuntimeException("Edge not found: " + edge);
         }
+        removeEdgeInternal(edge);
+    }
+
+    private void removeEdgeInternal(String edge) {
         edges.remove(edge);
+        String[] parts = splitEdge(edge);
+        if (parts.length == 2) {
+            String src = parts[0];
+            String dst = parts[1];
+            SortedSet<String> neighbors = adjacency.get(src);
+            if (neighbors != null) {
+                neighbors.remove(dst);
+            }
+        }
+    }
+
+    private String buildEdge(String srcLabel, String dstLabel) {
+        return srcLabel + EDGE_SEPARATOR + dstLabel;
+    }
+
+    private String[] splitEdge(String edge) {
+        return edge.split(EDGE_SEPARATOR, 2);
+    }
+
+    public List<String> getNeighbors(String srcLabel) {
+        SortedSet<String> neighbors = adjacency.get(srcLabel);
+        if (neighbors == null) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(neighbors);
+    }
+
+    public Path GraphSearch(String src, String dst, Algorithm algo) {
+        return GraphSearch(new Node(src), new Node(dst), algo);
     }
 
     public Path GraphSearch(Node src, Node dst, Algorithm algo) {
-        if (!nodes.contains(src.label) || !nodes.contains(dst.label))
-            return null;
-
-        if (algo == Algorithm.BFS) {
-            Queue<Node> queue = new LinkedList<>();
-            HashMap<String, String> parent = new HashMap<>();
-            queue.add(src);
-            parent.put(src.label, null);
-
-            while (!queue.isEmpty()) {
-                Node curr = queue.poll();
-                if (curr.label.equals(dst.label)) {
-                    ArrayList<String> list = new ArrayList<>();
-                    String c = dst.label;
-                    while (c != null) {
-                        list.add(0, c);
-                        c = parent.get(c);
-                    }
-                    Path path = new Path();
-                    for (String l : list)
-                        path.addNode(new Node(l));
-                    return path;
-                }
-                for (String edge : edges) {
-                    if (edge.startsWith(curr.label + "->")) {
-                        String neighbor = edge.split("->")[1];
-                        if (!parent.containsKey(neighbor)) {
-                            parent.put(neighbor, curr.label);
-                            queue.add(new Node(neighbor));
-                        }
-                    }
-                }
-            }
-        } else {
-            ArrayList<Node> pathList = new ArrayList<>();
-            if (dfs(src.label, dst.label, new HashSet<>(), pathList)) {
-                Path path = new Path();
-                for (Node n : pathList)
-                    path.addNode(n);
-                return path;
-            }
-        }
-
-        return null;
-    }
-
-    private boolean dfs(String curr, String dst, HashSet<String> visited, ArrayList<Node> pathList) {
-        visited.add(curr);
-        pathList.add(new Node(curr));
-
-        if (curr.equals(dst))
-            return true;
-
-        for (String edge : edges) {
-            if (edge.startsWith(curr + "->")) {
-                String neighbor = edge.split("->")[1];
-                if (!visited.contains(neighbor)) {
-                    if (dfs(neighbor, dst, visited, pathList))
-                        return true;
-                }
-            }
-        }
-
-        pathList.remove(pathList.size() - 1);
-        return false;
+        return searchEngine.search(this, src, dst, algo);
     }
 
     protected void addNodeInternal(String label) {
         nodes.add(label);
+        adjacency.computeIfAbsent(label, key -> new TreeSet<>());
     }
 
     protected void addEdgeInternal(String src, String dst) {
         nodes.add(src);
         nodes.add(dst);
-        edges.add(src + "->" + dst);
+        if (edges.add(buildEdge(src, dst))) {
+            adjacency.computeIfAbsent(src, key -> new TreeSet<>()).add(dst);
+            adjacency.computeIfAbsent(dst, key -> new TreeSet<>());
+        }
     }
 
     @Override
@@ -175,7 +169,7 @@ public class Graph {
         sb.append("Edges:").append(System.lineSeparator());
 
         for (String edge : edges) {
-            String[] parts = edge.split("->");
+            String[] parts = splitEdge(edge);
             sb.append(parts[0]).append(" -> ").append(parts[1]).append(System.lineSeparator());
         }
 
@@ -191,7 +185,7 @@ public class Graph {
         sb.append("digraph {").append(System.lineSeparator());
 
         for (String edge : edges) {
-            String[] parts = edge.split("->");
+            String[] parts = splitEdge(edge);
             sb.append("    ").append(parts[0]).append(" -> ").append(parts[1]).append(";")
                     .append(System.lineSeparator());
         }
@@ -199,7 +193,7 @@ public class Graph {
         for (String node : nodes) {
             boolean used = false;
             for (String edge : edges) {
-                if (edge.startsWith(node + "->") || edge.endsWith("->" + node)) {
+                if (edge.startsWith(node + EDGE_SEPARATOR) || edge.endsWith(EDGE_SEPARATOR + node)) {
                     used = true;
                     break;
                 }

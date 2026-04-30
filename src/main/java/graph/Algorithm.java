@@ -1,5 +1,7 @@
 package graph;
 
 public enum Algorithm {
-    BFS, DFS
+    BFS,
+    DFS,
+    RANDOM_WALK
 }
