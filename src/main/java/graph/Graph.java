@@ -8,10 +8,26 @@ import java.util.*;
 public class Graph {
     private final Set<String> nodes;
     private final Set<String> edges;
+    private final Map<Algorithm, SearchStrategy> strategies;
 
     public Graph() {
         this.nodes = new TreeSet<>();
         this.edges = new TreeSet<>();
+        this.strategies = new EnumMap<>(Algorithm.class);
+        registerDefaultStrategies();
+    }
+
+    private void registerDefaultStrategies() {
+        strategies.put(Algorithm.BFS, new BfsSearchStrategy());
+        strategies.put(Algorithm.DFS, new DfsSearchStrategy());
+        strategies.put(Algorithm.RANDOM_WALK, new RandomWalkSearchStrategy());
+    }
+
+    public void registerStrategy(Algorithm algorithm, SearchStrategy strategy) {
+        if (algorithm == null || strategy == null) {
+            throw new IllegalArgumentException("Algorithm and strategy cannot be null.");
+        }
+        strategies.put(algorithm, strategy);
     }
 
     public Set<String> getNodes() {
@@ -88,72 +104,31 @@ public class Graph {
         edges.remove(edge);
     }
 
-    public Path GraphSearch(Node src, Node dst, Algorithm algo) {
-        if (!nodes.contains(src.label) || !nodes.contains(dst.label))
-            return null;
-
-        if (algo == Algorithm.BFS) {
-            Queue<Node> queue = new LinkedList<>();
-            HashMap<String, String> parent = new HashMap<>();
-            queue.add(src);
-            parent.put(src.label, null);
-
-            while (!queue.isEmpty()) {
-                Node curr = queue.poll();
-                if (curr.label.equals(dst.label)) {
-                    ArrayList<String> list = new ArrayList<>();
-                    String c = dst.label;
-                    while (c != null) {
-                        list.add(0, c);
-                        c = parent.get(c);
-                    }
-                    Path path = new Path();
-                    for (String l : list)
-                        path.addNode(new Node(l));
-                    return path;
-                }
-                for (String edge : edges) {
-                    if (edge.startsWith(curr.label + "->")) {
-                        String neighbor = edge.split("->")[1];
-                        if (!parent.containsKey(neighbor)) {
-                            parent.put(neighbor, curr.label);
-                            queue.add(new Node(neighbor));
-                        }
-                    }
-                }
-            }
-        } else {
-            ArrayList<Node> pathList = new ArrayList<>();
-            if (dfs(src.label, dst.label, new HashSet<>(), pathList)) {
-                Path path = new Path();
-                for (Node n : pathList)
-                    path.addNode(n);
-                return path;
+    public List<String> getNeighbors(String srcLabel) {
+        ArrayList<String> neighbors = new ArrayList<>();
+        for (String edge : edges) {
+            if (edge.startsWith(srcLabel + "->")) {
+                String[] parts = edge.split("->", 2);
+                neighbors.add(parts[1]);
             }
         }
-
-        return null;
+        return neighbors;
     }
 
-    private boolean dfs(String curr, String dst, HashSet<String> visited, ArrayList<Node> pathList) {
-        visited.add(curr);
-        pathList.add(new Node(curr));
+    public Path GraphSearch(String src, String dst, Algorithm algo) {
+        return GraphSearch(new Node(src), new Node(dst), algo);
+    }
 
-        if (curr.equals(dst))
-            return true;
-
-        for (String edge : edges) {
-            if (edge.startsWith(curr + "->")) {
-                String neighbor = edge.split("->")[1];
-                if (!visited.contains(neighbor)) {
-                    if (dfs(neighbor, dst, visited, pathList))
-                        return true;
-                }
-            }
+    public Path GraphSearch(Node src, Node dst, Algorithm algo) {
+        if (src == null || dst == null || algo == null) {
+            return null;
         }
 
-        pathList.remove(pathList.size() - 1);
-        return false;
+        SearchStrategy strategy = strategies.get(algo);
+        if (strategy == null) {
+            throw new IllegalArgumentException("No strategy configured for algorithm: " + algo);
+        }
+        return strategy.search(this, src, dst);
     }
 
     protected void addNodeInternal(String label) {

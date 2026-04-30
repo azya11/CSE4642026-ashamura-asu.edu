@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -104,5 +105,56 @@ public class GraphTest {
 
         String content = Files.readString(temp);
         assertTrue(content.contains("a -> b;"));
+    }
+
+    @Test
+    public void testGraphSearchBfs() {
+        Graph g = new Graph();
+        g.addEdge("a", "b");
+        g.addEdge("a", "e");
+        g.addEdge("b", "c");
+        g.addEdge("e", "g");
+        g.addEdge("g", "h");
+
+        graph.Path path = g.GraphSearch("a", "c", Algorithm.BFS);
+        assertNotNull(path);
+        assertEquals("a -> b -> c", path.toString());
+    }
+
+    @Test
+    public void testGraphSearchDfs() {
+        Graph g = new Graph();
+        g.addEdge("a", "b");
+        g.addEdge("a", "e");
+        g.addEdge("b", "c");
+        g.addEdge("e", "g");
+        g.addEdge("g", "h");
+
+        graph.Path path = g.GraphSearch("a", "c", Algorithm.DFS);
+        assertNotNull(path);
+        assertEquals("a -> b -> c", path.toString());
+    }
+
+    @Test
+    public void testGraphSearchNoPath() {
+        Graph g = new Graph();
+        g.addEdge("a", "b");
+        g.addNode("z");
+
+        graph.Path path = g.GraphSearch("a", "z", Algorithm.BFS);
+        assertNull(path);
+    }
+
+    @Test
+    public void testRandomWalkSearchFindsPathWithSeed() {
+        Graph g = new Graph();
+        g.addEdge("a", "b");
+        g.addEdge("b", "c");
+
+        g.registerStrategy(Algorithm.RANDOM_WALK, new RandomWalkSearchStrategy(new Random(0), false));
+        graph.Path path = g.GraphSearch("a", "c", Algorithm.RANDOM_WALK);
+
+        assertNotNull(path);
+        assertEquals("a -> b -> c", path.toString());
     }
 }
