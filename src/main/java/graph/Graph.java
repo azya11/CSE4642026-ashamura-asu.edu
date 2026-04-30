@@ -84,7 +84,9 @@ public class Graph {
                 temp.add(e);
             }
         }
-        edges.removeAll(temp);
+        for (String edge : temp) {
+            removeEdgeInternal(edge);
+        }
         for (SortedSet<String> neighbors : adjacency.values()) {
             neighbors.remove(label);
         }
@@ -101,10 +103,19 @@ public class Graph {
         if (!edges.contains(edge)) {
             throw new RuntimeException("Edge not found: " + edge);
         }
+        removeEdgeInternal(edge);
+    }
+
+    private void removeEdgeInternal(String edge) {
         edges.remove(edge);
-        SortedSet<String> neighbors = adjacency.get(srcLabel);
-        if (neighbors != null) {
-            neighbors.remove(dstLabel);
+        String[] parts = edge.split("->", 2);
+        if (parts.length == 2) {
+            String src = parts[0];
+            String dst = parts[1];
+            SortedSet<String> neighbors = adjacency.get(src);
+            if (neighbors != null) {
+                neighbors.remove(dst);
+            }
         }
     }
 
